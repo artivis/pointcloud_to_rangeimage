@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package>
+  <name>pointcloud_to_rangeimage</name>
+  <version>0.0.0</version>
+  <description>turns a 360 point cloud to a range image</description>
+
+  <maintainer email="jeremie.deray@pal-robotics.com">Jeremie Deray</maintainer>
+
+  <license>TODO</license>
+
+  <!-- <url type="website">http://wiki.ros.org/range_image_spherical</url> -->
+
+  <author >Jeremie Deray</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sensors_msgs</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sensors_msgs</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>
