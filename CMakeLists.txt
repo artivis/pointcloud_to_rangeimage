@@ -5,11 +5,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   sensor_msgs
+  cv_bridge
   dynamic_reconfigure
   message_generation
 )
 
 find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED)
 
 generate_dynamic_reconfigure_options(
     cfg/RangeImage.cfg
@@ -30,6 +32,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -43,6 +46,7 @@ add_dependencies(pointcloud_to_rangeimage_node ${PROJECT_NAME}_gencfg pointcloud
 target_link_libraries(pointcloud_to_rangeimage_node
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
+   ${OpenCV_LIBRARIES}
 )
 
 #############

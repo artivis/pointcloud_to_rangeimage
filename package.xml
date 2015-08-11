@@ -17,12 +17,14 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>sensors_msgs</build_depend>
+  <build_depend>ros_bridge</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>message_generation</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>sensors_msgs</run_depend>
+  <run_depend>ros_bridge</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>message_runtime</run_depend>
 
