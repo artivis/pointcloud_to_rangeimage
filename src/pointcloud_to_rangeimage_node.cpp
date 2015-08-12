@@ -17,11 +17,12 @@
 
 #include <math.h>
 
+#include "pointcloud_to_rangeimage/utils.h"
+
 namespace
 {
   typedef pcl::PointXYZ              PointType;
   typedef pcl::PointCloud<PointType> PointCloud;
-
 
   typedef pcl::RangeImage          RI;
   typedef pcl::RangeImageSpherical RIS;
@@ -32,75 +33,13 @@ namespace
   typedef dynamic_reconfigure::Server<conf>               RangeImageReconfServer;
 }
 
-void getColorForFloat(float value, unsigned char& r, unsigned char& g, unsigned char& b)
-{
-  if (std::isinf(value))
-  {
-    if (value > 0.0f)
-    {
-      r = 150; g = 150; b = 200; // INFINITY
-      return;
-    }
-    r = 150; g = 200; b = 150; // -INFINITY
-    return;
-  }
-  if (!std::isfinite (value))
-  {
-    r = 200; g = 150; b = 150; // -INFINITY
-    return;
-  }
-  r = g = b = 0;
-  value *= 10;
-  if (value <= 1.0)
-  { // black -> purple
-    b = static_cast<unsigned char> (static_cast<long int>(round((value*200))));
-    r = static_cast<unsigned char> (static_cast<long int>(round((value*120))));
-  }
-  else if (value <= 2.0)
-  { // purple -> blue
-    b = static_cast<unsigned char> (200 + static_cast<long int>(round((value-1.0)*55)));
-    r = static_cast<unsigned char> (120 - static_cast<long int>(round((value-1.0)*120)));
-  }
-  else if (value <= 3.0)
-  { // blue -> turquoise
-    b = static_cast<unsigned char> (255 - static_cast<long int>(round((value-2.0)*55)));
-    g = static_cast<unsigned char> (static_cast<long int>(round((value-2.0)*200)));
-  }
-  else if (value <= 4.0)
-  { // turquoise -> green
-    b = static_cast<unsigned char> (200 - static_cast<long int>(round((value-3.0)*200)));
-    g = static_cast<unsigned char> (200 + static_cast<long int>(round((value-3.0)*55)));
-  }
-  else if (value <= 5.0)
-  { // green -> greyish green
-    g = static_cast<unsigned char> (255 - static_cast<long int>(round((value-4.0)*100)));
-    r = static_cast<unsigned char> (static_cast<long int>(round((value-4.0)*120)));
-  }
-  else if (value <= 6.0)
-  { // greyish green -> red
-    r = static_cast<unsigned char> (100 + static_cast<long int>(round((value-5.0)*155)));
-    g = static_cast<unsigned char> (120 - static_cast<long int>(round((value-5.0)*120)));
-    b = static_cast<unsigned char> (120 - static_cast<long int>(round((value-5.0)*120)));
-  }
-  else if (value <= 7.0)
-  { // red -> yellow
-    r = 255;
-    g = static_cast<unsigned char> (static_cast<long int>(round((value-6.0)*255)));
-  }
-  else
-  { // yellow -> white
-    r = 255;
-    g = 255;
-    b = static_cast<unsigned char> (static_cast<long int>(round((value-7.0)*255.0/3.0)));
-  }
-}
-
 class RangeImageConverter
 {
 private:
 
   bool _visualize;
   bool _publish;
+  bool _rgb_range_img;
   bool _laser_frame;
 
   pcl::RangeImage::CoordinateFrame _frame;
@@ -109,6 +48,9 @@ private:
   float _ang_res_y;
   float _max_ang_w;
   float _max_ang_h;
+
+  float _min_range;
+  float _max_range;
 
   cv::Mat _rangeImage;
 
@@ -119,7 +61,7 @@ private:
   ros::NodeHandle nh_;
   ros::ServiceServer save_;
 
-  ros::Publisher pub_;
+  ros::Publisher  pub_;
   ros::Subscriber sub_;
 
   boost::shared_ptr<RangeImageReconfServer> drsv_;
@@ -127,18 +69,19 @@ private:
 public:
 
   RangeImageConverter() :
-    _visualize(true),
+    _visualize(false),
     _publish(true),
+    _rgb_range_img(true),
     _laser_frame(true),
     _ang_res_x(0.1),
     _ang_res_y(0.1),
     _max_ang_w(180.),
     _max_ang_h(180.),
+    _min_range(0.5),
+    _max_range(50),
     nh_("~")
   {
     rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
-
-    visualizer_ = boost::shared_ptr<visualizer>(new visualizer);
 
     drsv_.reset(new RangeImageReconfServer(ros::NodeHandle("range_image_converter")));
 
@@ -149,6 +92,7 @@ public:
 
     nh_.param("visualisation", _visualize, _visualize);
     nh_.param("publish", _publish, _publish);
+    nh_.param("rgb_range_img", _rgb_range_img, _rgb_range_img);
     nh_.param("laser_frame", _laser_frame, _laser_frame);
 
     pub_ = nh_.advertise<sensor_msgs::Image>("image_out", 1);
@@ -157,6 +101,9 @@ public:
     sub_ = nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
+
+    if (_visualize)
+      visualizer_ = boost::shared_ptr<visualizer>(new visualizer);
   }
 
   ~RangeImageConverter()
@@ -166,57 +113,76 @@ public:
 
   void callback(const PointCloud::ConstPtr& msg)
   {
-    ros::Time start = ros::Time::now();
-
-    Eigen::Affine3f eigen_sensor_pose;
-    eigen_sensor_pose.setIdentity();
+    if (msg == NULL) return;
 
     rangeImageSph_->createFromPointCloud(*msg, pcl::deg2rad(_ang_res_x), pcl::deg2rad(_ang_res_y),
                                          pcl::deg2rad(_max_ang_w), pcl::deg2rad(_max_ang_h),
-                                         eigen_sensor_pose, _frame, 0.0, 0.0f, 0);
+                                         Eigen::Affine3f::Identity(), _frame, 0.0, 0.0f, 0);
 
-    rangeImageSph_->setUnseenToMaxRange();
+    rangeImageSph_->header.frame_id = msg->header.frame_id;
 
     if (_visualize)
       visualizer_->showRangeImage(*rangeImageSph_);
 
     if (_publish)
       convert();
-
-    //ROS_INFO_STREAM("Process took : " << ros::Time::now() - start << " seconds.");
   }
 
   void convert()
   {
+    if (pub_.getNumSubscribers() < 0) return;
+
     int cols = rangeImageSph_->width;
     int rows = rangeImageSph_->height;
 
-    float min_range;
-    float max_range;
-    rangeImageSph_->getMinMaxRanges(min_range, max_range);
+    sensor_msgs::ImagePtr msg;
 
-    _rangeImage = cv::Mat::zeros(rows, cols, CV_8UC3);
+    float factor = 1.0f / (_max_range - _min_range);
+    float offset = -_min_range;
 
-    float factor = 1.0f / (max_range-min_range);
-    float offset = -min_range;
+    std::string encoding;
 
-    unsigned char r,g,b;
+    if (_rgb_range_img)
+    {
+      encoding = "rgb8";
+      _rangeImage = cv::Mat::zeros(rows, cols, cv_bridge::getCvType(encoding));
 
-    for (int i=0; i<cols; ++i)
-      for (int j=0; j<rows; ++j)
-      {
-        pcl::PointWithRange p = rangeImageSph_->getPoint(i, j);
+      unsigned char r,g,b;
 
-        float range = std::max(0.0f, std::min(1.0f, factor * (p.range + offset)));
+      for (int i=0; i<cols; ++i)
+        for (int j=0; j<rows; ++j)
+        {
+          pcl::PointWithRange p = rangeImageSph_->getPoint(i, j);
 
-        getColorForFloat(range, r, g, b);
+          float range = std::max(0.0f, std::min(1.0f, factor * (p.range + offset)));
 
-        _rangeImage.at<cv::Vec3b>(j, i)[0] = r;
-        _rangeImage.at<cv::Vec3b>(j, i)[1] = g;
-        _rangeImage.at<cv::Vec3b>(j, i)[2] = b;
-      }
+          getColorFromRange(range, r, g, b);
 
-    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", _rangeImage).toImageMsg();
+          _rangeImage.at<cv::Vec3b>(j, i)[0] = r;
+          _rangeImage.at<cv::Vec3b>(j, i)[1] = g;
+          _rangeImage.at<cv::Vec3b>(j, i)[2] = b;
+        }
+    }
+    else
+    {
+      encoding = "mono16";
+      _rangeImage = cv::Mat::zeros(rows, cols, cv_bridge::getCvType(encoding));
+
+      for (int i=0; i<cols; ++i)
+        for (int j=0; j<rows; ++j)
+        {
+          float r = rangeImageSph_->getPoint(i, j).range;
+
+          float range = (!std::isinf(r))?
+                std::max(0.0f, std::min(1.0f, factor * (r + offset))) :
+                0.0;
+
+          _rangeImage.at<ushort>(j, i) = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
+        }
+    }
+
+    msg = cv_bridge::CvImage(std_msgs::Header(), encoding, _rangeImage).toImageMsg();
+    msg->header.frame_id = rangeImageSph_->header.frame_id;
 
     pub_.publish(msg);
   }
@@ -234,13 +200,17 @@ private:
    ROS_INFO_STREAM("ang_res_y " << _ang_res_x);
    ROS_INFO_STREAM("max_ang_w " << _max_ang_w);
    ROS_INFO_STREAM("max_ang_h " << _max_ang_h);
+
+   if (_laser_frame)
+     ROS_INFO_STREAM("Frame type : " << "LASER");
+   else
+     ROS_INFO_STREAM("Frame type : " << "CAMERA");
   }
 };
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "pointcloud_to_rangeimage");
-  ros::NodeHandle nh;
 
   RangeImageConverter converter;
 
