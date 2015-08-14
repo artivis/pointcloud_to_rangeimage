@@ -60,6 +60,7 @@ target_link_libraries(rangeimage_to_pointcloud_node
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
    ${OpenCV_LIBRARIES}
+   ${Boost_LIBRARIES}
 )
 
 #############

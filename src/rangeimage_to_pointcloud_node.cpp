@@ -14,6 +14,8 @@
 
 #include <math.h>
 
+#include <boost/thread/mutex.hpp>
+
 #include "pointcloud_to_rangeimage/utils.h"
 
 namespace
@@ -49,6 +51,8 @@ private:
   // Sensor min/max range
   float _min_range;
   float _max_range;
+
+  boost::mutex _mut;
 
   cv_bridge::CvImagePtr _rangeImage;
 
@@ -132,18 +136,27 @@ public:
 
   void callback(const sensor_msgs::ImageConstPtr& msg)
   {
-    if (!_init)
-      init();
+    if (msg == NULL) return;
 
+    boost::mutex::scoped_lock(_mut);
+
+    _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
+    pcl_conversions::toPCL(msg->header, _pointcloud.header);
+  }
+
+  void convert()
+  {
     // What the point if nobody cares ?
     if (pub_.getNumSubscribers() <= 0)
       return;
 
+    if (_rangeImage == NULL)
+      return;
+
+    if (!_init)
+      init();
+
     _pointcloud.clear();
-
-    _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
-
-    pcl_conversions::toPCL(msg->header, _pointcloud.header);
 
     float factor = 1.0f / (_max_range - _min_range);
     float offset = -_min_range;
@@ -156,7 +169,7 @@ public:
     int bottom = -1;
     int left   = cols;
 
-    if (msg->encoding == "bgr8")
+    if (_rangeImage->encoding == "bgr8")
     {
       for (int i=0; i<cols; ++i)
       {
@@ -172,7 +185,7 @@ public:
         }
       }
     }
-    else if (msg->encoding == "mono16")
+    else if (_rangeImage->encoding == "mono16")
     {
       for (int i=0; i<cols; ++i)
       {
@@ -284,5 +297,14 @@ int main(int argc, char** argv)
 
   PointCloudConverter converter;
 
-  ros::spin();
+  ros::Rate rate(20);
+
+  while (ros::ok())
+  {
+    converter.convert();
+
+    ros::spinOnce();
+
+    rate.sleep();
+  }
 }
