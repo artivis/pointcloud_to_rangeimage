@@ -195,41 +195,42 @@ public:
           bottom = std::max(bottom, j);
           left   = std::min(left,   i);
         }
-      else
-      {
-        ROS_ERROR("Unknown image encoding!");
-        return;
-      }
-
-      double offset_x = rangeImageSph_->getImageOffsetX();
-      double offset_y = rangeImageSph_->getImageOffsetY();
-
-      std::string off_x_res, off_y_res;
-      if (nh_.searchParam("range_image_offset_x", off_x_res))
-        nh_.param(off_x_res, offset_x, offset_x);
-
-      if (nh_.searchParam("range_image_offset_y", off_y_res))
-        nh_.param(off_y_res, offset_y, offset_y);
-
-      rangeImageSph_->cropImage(0, top, right, bottom, left);
-
-      rangeImageSph_->setImageOffsets(offset_x, offset_y);
-
-      rangeImageSph_->recalculate3DPointPositions();
-
-      for (int i=0; i<rangeImageSph_->points.size(); ++i)
-      {
-        pcl::PointWithRange& pts = rangeImageSph_->points[i];
-
-        // Discard unobserved points
-        if (std::isinf(pts.range))
-          continue;
-
-        PointType p(pts.x, pts.y, pts.z);
-
-        _pointcloud.push_back(p);
-      }
     }
+    else
+    {
+      ROS_ERROR("Unknown image encoding!");
+      return;
+    }
+
+    double offset_x = rangeImageSph_->getImageOffsetX();
+    double offset_y = rangeImageSph_->getImageOffsetY();
+
+    std::string off_x_res, off_y_res;
+    if (nh_.searchParam("range_image_offset_x", off_x_res))
+      nh_.param(off_x_res, offset_x, offset_x);
+
+    if (nh_.searchParam("range_image_offset_y", off_y_res))
+      nh_.param(off_y_res, offset_y, offset_y);
+
+    rangeImageSph_->cropImage(0, top, right, bottom, left);
+
+    rangeImageSph_->setImageOffsets(offset_x, offset_y);
+
+    rangeImageSph_->recalculate3DPointPositions();
+
+    for (int i=0; i<rangeImageSph_->points.size(); ++i)
+    {
+      pcl::PointWithRange& pts = rangeImageSph_->points[i];
+
+      // Discard unobserved points
+      if (std::isinf(pts.range))
+        continue;
+
+      PointType p(pts.x, pts.y, pts.z);
+
+      _pointcloud.push_back(p);
+    }
+
 
     pub_.publish(_pointcloud);
   }
