@@ -154,6 +154,11 @@ public:
     int cols = _rangeImage->image.cols;
     int rows = _rangeImage->image.rows;
 
+    int top    = rows;
+    int right  = -1;
+    int bottom = -1;
+    int left   = cols;
+
     if (msg->encoding == "bgr8")
     {
       for (int i=0; i<cols; ++i)
@@ -186,7 +191,31 @@ public:
 
           pcl::PointWithRange& p = rangeImageSph_->getPoint(i, j);
           p.range = range;
+
+          top    = std::min(top,    j);
+          right  = std::max(right,  i);
+          bottom = std::max(bottom, j);
+          left   = std::min(left,   i);
         }
+      else
+      {
+        ROS_ERROR("Unknown image encoding!");
+        return;
+      }
+
+      double offset_x = rangeImageSph_->getImageOffsetX();
+      double offset_y = rangeImageSph_->getImageOffsetY();
+
+      std::string off_x_res, off_y_res;
+      if (nh_.searchParam("range_image_offset_x", off_x_res))
+        nh_.param(off_x_res, offset_x, offset_x);
+
+      if (nh_.searchParam("range_image_offset_y", off_y_res))
+        nh_.param(off_y_res, offset_y, offset_y);
+
+      rangeImageSph_->cropImage(0, top, right, bottom, left);
+
+      rangeImageSph_->setImageOffsets(offset_x, offset_y);
 
       rangeImageSph_->recalculate3DPointPositions();
 
