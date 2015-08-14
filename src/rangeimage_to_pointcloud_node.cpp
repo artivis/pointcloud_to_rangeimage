@@ -206,15 +206,19 @@ public:
       return;
     }
 
-    double offset_x = rangeImageSph_->getImageOffsetX();
-    double offset_y = rangeImageSph_->getImageOffsetY();
+    int offset_x = rangeImageSph_->getImageOffsetX();
+    int offset_y = rangeImageSph_->getImageOffsetY();
 
     std::string off_x_res, off_y_res;
-    if (nh_.searchParam("range_image_offset_x", off_x_res))
+    if (nh_.searchParam("/pointcloud_to_rangeimage/range_image_offset_x", off_x_res))
       nh_.param(off_x_res, offset_x, offset_x);
+    else
+      ROS_WARN_ONCE("Couldn't find param 'range_image_offset_x'. Use Default value.");
 
-    if (nh_.searchParam("range_image_offset_y", off_y_res))
+    if (nh_.searchParam("/pointcloud_to_rangeimage/range_image_offset_y", off_y_res))
       nh_.param(off_y_res, offset_y, offset_y);
+    else
+      ROS_WARN_ONCE("Couldn't find param 'range_image_offset_y'. Use Default value.");
 
     rangeImageSph_->cropImage(0, top, right, bottom, left);
 
