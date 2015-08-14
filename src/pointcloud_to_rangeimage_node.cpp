@@ -37,13 +37,18 @@ private:
   bool _rgb_range_img;
   bool _laser_frame;
 
+  // RangeImage frame
   pcl::RangeImage::CoordinateFrame _frame;
 
+  // RangeImage resolution
   float _ang_res_x;
   float _ang_res_y;
+
+  // RangeImage angular FoV
   float _max_ang_w;
   float _max_ang_h;
 
+  // Sensor min/max range
   float _min_range;
   float _max_range;
 
@@ -142,6 +147,12 @@ public:
 
     sensor_msgs::ImagePtr msg;
 
+    // TODO : would be better to use
+    // those min/max rather than params
+    // but how to get them back properly on client side ?
+    //float min_range, max_range;
+    //rangeImageSph_->getMinMaxRanges(min_range, max_range);
+
     float factor = 1.0f / (_max_range - _min_range);
     float offset = -_min_range;
 
@@ -209,7 +220,7 @@ private:
     _max_ang_h = config.max_ang_h;
 
    ROS_INFO_STREAM("ang_res_x " << _ang_res_x);
-   ROS_INFO_STREAM("ang_res_y " << _ang_res_x);
+   ROS_INFO_STREAM("ang_res_y " << _ang_res_y);
    ROS_INFO_STREAM("max_ang_w " << _max_ang_w);
    ROS_INFO_STREAM("max_ang_h " << _max_ang_h);
 
