@@ -70,7 +70,7 @@ public:
     _laser_frame(true),
     _init(false),
     _ang_res_x(0.5),
-    _ang_res_y(0.5),
+    _ang_res_y(0.7),
     _max_ang_w(360.),
     _max_ang_h(360.),
     _min_range(0.5),
@@ -245,7 +245,7 @@ private:
     _max_ang_h = config.max_ang_h;
 
     ROS_INFO_STREAM("ang_res_x " << _ang_res_x);
-    ROS_INFO_STREAM("ang_res_y " << _ang_res_x);
+    ROS_INFO_STREAM("ang_res_y " << _ang_res_y);
     ROS_INFO_STREAM("max_ang_w " << _max_ang_w);
     ROS_INFO_STREAM("max_ang_h " << _max_ang_h);
 
