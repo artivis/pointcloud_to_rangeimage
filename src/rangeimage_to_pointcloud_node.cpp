@@ -38,13 +38,18 @@ private:
   bool _laser_frame;
   bool _init;
 
+  // RangeImage frame
   pcl::RangeImage::CoordinateFrame _frame;
 
+  // RangeImage resolution
   float _ang_res_x;
   float _ang_res_y;
+
+  // RangeImage angular FoV
   float _max_ang_w;
   float _max_ang_h;
 
+  // Sensor min/max range
   float _min_range;
   float _max_range;
 
@@ -147,8 +152,10 @@ public:
         {
           ushort range_img = _rangeImage->image.at<ushort>(j, i);
 
-          if (range_img == 0) continue;
+          // Discard unobserved points
+          if (range_img == 0.) continue;
 
+          // Rescale range
           float range = static_cast<float>(range_img) /
                         static_cast<float>(std::numeric_limits<ushort>::max());
 
