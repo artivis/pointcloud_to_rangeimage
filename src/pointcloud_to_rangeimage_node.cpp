@@ -64,7 +64,7 @@ public:
     _rgb_range_img(true),
     _laser_frame(true),
     _ang_res_x(0.5),
-    _ang_res_y(0.5),
+    _ang_res_y(0.7),
     _max_ang_w(360.),
     _max_ang_h(360.),
     _min_range(0.5),
