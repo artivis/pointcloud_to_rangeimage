@@ -136,7 +136,9 @@ public:
 
   void convert()
   {
-    if (pub_.getNumSubscribers() < 0) return;
+    // What the point if nobody cares ?
+    if (pub_.getNumSubscribers() <= 0)
+      return;
 
     int cols = rangeImageSph_->width;
     int rows = rangeImageSph_->height;
