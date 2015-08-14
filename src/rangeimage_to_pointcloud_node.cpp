@@ -222,7 +222,12 @@ public:
 
       for (int i=0; i<rangeImageSph_->points.size(); ++i)
       {
-        pcl::PointWithRange pts = rangeImageSph_->points.at(i);
+        pcl::PointWithRange& pts = rangeImageSph_->points[i];
+
+        // Discard unobserved points
+        if (std::isinf(pts.range))
+          continue;
+
         PointType p(pts.x, pts.y, pts.z);
 
         _pointcloud.push_back(p);
