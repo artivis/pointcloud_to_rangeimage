@@ -148,7 +148,7 @@ public:
   {
     if (msg == NULL) return;
 
-    boost::mutex::scoped_lock(_mut);
+    boost::mutex::scoped_lock lock(_mut);
 
     _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
     pcl_conversions::toPCL(msg->header, _pointcloud.header);
@@ -170,6 +170,8 @@ public:
 
     float factor = 1.0f / (_max_range - _min_range);
     float offset = -_min_range;
+
+    _mut.lock();
 
     int cols = _rangeImage->image.cols;
     int rows = _rangeImage->image.rows;
@@ -267,8 +269,9 @@ public:
       _pointcloud.push_back(p);
     }
 
-
     pub_.publish(_pointcloud);
+
+    _mut.unlock();
   }
 
 private:
