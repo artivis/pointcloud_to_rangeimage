@@ -3,6 +3,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <image_transport/image_transport.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <pointcloud_to_rangeimage/PointCloudToRangeImageReconfigureConfig.h>
@@ -28,6 +29,9 @@ namespace
 
   typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig conf;
   typedef dynamic_reconfigure::Server<conf>               RangeImageReconfServer;
+
+  typedef image_transport::ImageTransport It;
+  typedef image_transport::Subscriber     Sub;
 }
 
 class PointCloudConverter
@@ -61,10 +65,10 @@ private:
   boost::shared_ptr<RIS> rangeImageSph_;
 
   ros::NodeHandle nh_;
-  ros::ServiceServer save_;
 
+  It              it_;
   ros::Publisher  pub_;
-  ros::Subscriber sub_;
+  Sub             sub_;
 
   boost::shared_ptr<RangeImageReconfServer> drsv_;
 
@@ -79,7 +83,8 @@ public:
     _max_ang_h(360.),
     _min_range(0.5),
     _max_range(50),
-    nh_("~")
+    nh_("~"),
+    it_(nh_)
   {
     rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
 
@@ -115,8 +120,13 @@ public:
 
     pub_ = nh_.advertise<sensor_msgs::PointCloud2>("pointcloud_out", 1);
 
-    ros::NodeHandle nh;
-    sub_ = nh.subscribe<sensor_msgs::Image>("image_in", 1, &PointCloudConverter::callback, this);
+    std::string transport = "raw";
+    nh_.param("transport", transport, transport);
+    image_transport::TransportHints transportHint(transport);
+
+    std::string image_in = "image_in";
+    nh_.param("image_in", image_in, image_in);
+    sub_ = it_.subscribe(image_in, 1, &PointCloudConverter::callback, this, transportHint);
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
   }
