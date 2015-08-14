@@ -66,10 +66,10 @@ public:
   RangeImageConverter() :
     _rgb_range_img(true),
     _laser_frame(true),
-    _ang_res_x(0.1),
-    _ang_res_y(0.1),
-    _max_ang_w(180.),
-    _max_ang_h(180.),
+    _ang_res_x(0.5),
+    _ang_res_y(0.5),
+    _max_ang_w(360.),
+    _max_ang_h(360.),
     _min_range(0.5),
     _max_range(50),
     nh_("~")
@@ -84,7 +84,28 @@ public:
     drsv_->setCallback(cb);
 
     nh_.param("rgb_range_img", _rgb_range_img, _rgb_range_img);
-    nh_.param("laser_frame", _laser_frame, _laser_frame);
+    nh_.param("laser_frame",   _laser_frame, _laser_frame);
+
+    double ang_res_x = static_cast<double>(_ang_res_x);
+    double ang_res_y = static_cast<double>(_ang_res_y);
+    double max_ang_w = static_cast<double>(_max_ang_w);
+    double max_ang_h = static_cast<double>(_max_ang_h);
+    double min_range = static_cast<double>(_min_range);
+    double max_range = static_cast<double>(_max_range);
+
+    nh_.param("ang_res_x", ang_res_x, ang_res_x);
+    nh_.param("ang_res_y", ang_res_y, ang_res_y);
+    nh_.param("max_ang_w", max_ang_w, max_ang_w);
+    nh_.param("max_ang_h", max_ang_h, max_ang_h);
+    nh_.param("min_range", min_range, min_range);
+    nh_.param("max_range", max_range, max_range);
+
+    _ang_res_x = static_cast<float>(ang_res_x);
+    _ang_res_y = static_cast<float>(ang_res_y);
+    _max_ang_w = static_cast<float>(max_ang_w);
+    _max_ang_h = static_cast<float>(max_ang_h);
+    _min_range = static_cast<float>(min_range);
+    _max_range = static_cast<float>(max_range);
 
     pub_ = nh_.advertise<sensor_msgs::Image>("image_out", 1);
 
