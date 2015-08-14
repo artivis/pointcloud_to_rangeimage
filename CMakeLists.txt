@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   dynamic_reconfigure
   message_generation
+  image_transport
 )
 
 find_package(PCL REQUIRED)

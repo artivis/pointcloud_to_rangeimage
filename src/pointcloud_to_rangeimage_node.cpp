@@ -3,6 +3,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <image_transport/image_transport.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <pointcloud_to_rangeimage/PointCloudToRangeImageReconfigureConfig.h>
@@ -28,6 +29,9 @@ namespace
 
   typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig conf;
   typedef dynamic_reconfigure::Server<conf>               RangeImageReconfServer;
+
+  typedef image_transport::ImageTransport It;
+  typedef image_transport::Publisher      Pub;
 }
 
 class RangeImageConverter
@@ -63,7 +67,8 @@ private:
 
   ros::NodeHandle nh_;
 
-  ros::Publisher  pub_;
+  It              it_;
+  Pub             pub_;
   ros::Subscriber sub_;
 
   boost::shared_ptr<RangeImageReconfServer> drsv_;
@@ -79,7 +84,8 @@ public:
     _max_ang_h(360.),
     _min_range(0.5),
     _max_range(50),
-    nh_("~")
+    nh_("~"),
+    it_(nh_)
   {
     rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
 
@@ -114,7 +120,7 @@ public:
     _min_range = static_cast<float>(min_range);
     _max_range = static_cast<float>(max_range);
 
-    pub_ = nh_.advertise<sensor_msgs::Image>("image_out", 1);
+    pub_ = it_.advertise("image_out", 1);
 
     ros::NodeHandle nh;
     sub_ = nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
