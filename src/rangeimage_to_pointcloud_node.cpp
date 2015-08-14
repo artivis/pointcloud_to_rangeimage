@@ -36,6 +36,7 @@ class PointCloudConverter
 private:
 
   bool _laser_frame;
+  bool _init;
 
   pcl::RangeImage::CoordinateFrame _frame;
 
@@ -99,11 +100,19 @@ public:
 
   }
 
-  void callback(const sensor_msgs::ImageConstPtr& msg)
+  void init()
   {
     rangeImageSph_->createEmpty(pcl::deg2rad(_ang_res_x), pcl::deg2rad(_ang_res_y),
                                 Eigen::Affine3f::Identity(), _frame,
                                 pcl::deg2rad(_max_ang_w), pcl::deg2rad(_max_ang_h));
+    _init = true;
+  }
+
+  void callback(const sensor_msgs::ImageConstPtr& msg)
+  {
+    if (!_init)
+      init();
+
 
     _pointcloud.clear();
 
@@ -181,6 +190,8 @@ private:
       ROS_INFO_STREAM("Frame type : " << "LASER");
     else
       ROS_INFO_STREAM("Frame type : " << "CAMERA");
+
+    _init = false;
   }
 };
 
