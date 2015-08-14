@@ -38,8 +38,7 @@ class RangeImageConverter
 {
 private:
 
-  bool _visualize;
-  bool _publish;
+  bool _newmsg;
   bool _rgb_range_img;
   bool _laser_frame;
 
@@ -76,6 +75,7 @@ private:
 public:
 
   RangeImageConverter() :
+    _newmsg(false),
     _rgb_range_img(true),
     _laser_frame(true),
     _ang_res_x(0.5),
@@ -140,12 +140,17 @@ public:
     boost::mutex::scoped_lock(_mut);
 
     _pointcloud = *msg;
+
+    _newmsg = true;
   }
 
   void convert()
   {
     // What the point if nobody cares ?
     if (pub_.getNumSubscribers() <= 0)
+      return;
+
+    if (!_newmsg)
       return;
 
     boost::mutex::scoped_lock(_mut);
@@ -225,6 +230,8 @@ public:
     pcl_conversions::fromPCL(rangeImageSph_->header, msg->header);
 
     pub_.publish(msg);
+
+    _newmsg = false;
   }
 
 private:
