@@ -187,6 +187,12 @@ public:
 
           _rangeImage.at<ushort>(j, i) = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
         }
+
+      // Client side needs this info
+      // a bit hacky, waiting for a better solution
+      // from PCL side e.g. publish full image rather than cropped one
+      nh_.setParam("range_image_offset_x", rangeImageSph_->getImageOffsetX());
+      nh_.setParam("range_image_offset_y", rangeImageSph_->getImageOffsetY());
     }
 
     msg = cv_bridge::CvImage(std_msgs::Header(), encoding, _rangeImage).toImageMsg();
