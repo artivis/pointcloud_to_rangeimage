@@ -78,7 +78,7 @@ public:
   {
     rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
 
-    drsv_.reset(new RangeImageReconfServer(ros::NodeHandle("range_image_converter")));
+    drsv_.reset(new RangeImageReconfServer(ros::NodeHandle("pointcloud_to_rangeimage_dynreconf")));
 
     RangeImageReconfServer::CallbackType cb;
     cb = boost::bind(&RangeImageConverter::drcb, this, _1, _2);
