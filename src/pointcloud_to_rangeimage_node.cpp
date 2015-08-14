@@ -14,6 +14,8 @@
 
 #include <math.h>
 
+#include <boost/thread/mutex.hpp>
+
 #include "pointcloud_to_rangeimage/utils.h"
 
 namespace
@@ -52,7 +54,10 @@ private:
   float _min_range;
   float _max_range;
 
+  boost::mutex _mut;
+
   cv::Mat _rangeImage;
+  PointCloud _pointcloud;
 
   boost::shared_ptr<RIS> rangeImageSph_;
 
@@ -126,14 +131,9 @@ public:
   {
     if (msg == NULL) return;
 
-    rangeImageSph_->createFromPointCloud(*msg, pcl::deg2rad(_ang_res_x), pcl::deg2rad(_ang_res_y),
-                                         pcl::deg2rad(_max_ang_w), pcl::deg2rad(_max_ang_h),
-                                         Eigen::Affine3f::Identity(), _frame, 0.0, 0.0f, 0);
+    boost::mutex::scoped_lock(_mut);
 
-    rangeImageSph_->header.frame_id = msg->header.frame_id;
-    rangeImageSph_->header.stamp = msg->header.stamp;
-
-    convert();
+    _pointcloud = *msg;
   }
 
   void convert()
@@ -141,6 +141,15 @@ public:
     // What the point if nobody cares ?
     if (pub_.getNumSubscribers() <= 0)
       return;
+
+    boost::mutex::scoped_lock(_mut);
+
+    rangeImageSph_->createFromPointCloud(_pointcloud, pcl::deg2rad(_ang_res_x), pcl::deg2rad(_ang_res_y),
+                                         pcl::deg2rad(_max_ang_w), pcl::deg2rad(_max_ang_h),
+                                         Eigen::Affine3f::Identity(), _frame, 0.0, 0.0f, 0);
+
+    rangeImageSph_->header.frame_id = _pointcloud.header.frame_id;
+    rangeImageSph_->header.stamp    = _pointcloud.header.stamp;
 
     int cols = rangeImageSph_->width;
     int rows = rangeImageSph_->height;
@@ -246,5 +255,14 @@ int main(int argc, char** argv)
 
   RangeImageConverter converter;
 
-  ros::spin();
+  ros::Rate rate(20);
+
+  while (ros::ok())
+  {
+    converter.convert();
+
+    ros::spinOnce();
+
+    rate.sleep();
+  }
 }

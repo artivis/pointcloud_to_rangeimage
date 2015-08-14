@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
+
 
 generate_dynamic_reconfigure_options(
     cfg/RangeImage.cfg
@@ -33,6 +35,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -47,6 +50,7 @@ target_link_libraries(pointcloud_to_rangeimage_node
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
    ${OpenCV_LIBRARIES}
+   ${Boost_LIBRARIES}
 )
 
 ## Declare a cpp executable
