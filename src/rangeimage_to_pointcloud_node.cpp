@@ -189,7 +189,8 @@ public:
 
           range = (range - offset*factor) / factor;
 
-          pcl::PointWithRange& p = rangeImageSph_->getPoint(i, j);
+          pcl::PointWithRange& p = rangeImageSph_->getPointNoCheck(i, j);
+
           p.range = range;
 
           top    = std::min(top,    j);
