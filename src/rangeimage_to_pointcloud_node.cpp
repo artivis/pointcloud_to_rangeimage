@@ -159,6 +159,7 @@ public:
     if (msg->encoding == "bgr8")
     {
       for (int i=0; i<cols; ++i)
+      {
         for (int j=0; j<rows; ++j)
         {
           //float range = _rangeImage->image.at<cv::Vec3b>(j,i)[0];
@@ -169,10 +170,12 @@ public:
 
           //_pointcloud.push_back(p);
         }
+      }
     }
     else if (msg->encoding == "mono16")
     {
       for (int i=0; i<cols; ++i)
+      {
         for (int j=0; j<rows; ++j)
         {
           ushort range_img = _rangeImage->image.at<ushort>(j, i);
@@ -195,6 +198,7 @@ public:
           bottom = std::max(bottom, j);
           left   = std::min(left,   i);
         }
+      }
     }
     else
     {
