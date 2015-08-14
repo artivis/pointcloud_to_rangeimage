@@ -55,7 +55,6 @@ private:
   boost::shared_ptr<RIS> rangeImageSph_;
 
   ros::NodeHandle nh_;
-  ros::ServiceServer save_;
 
   ros::Publisher  pub_;
   ros::Subscriber sub_;
