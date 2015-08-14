@@ -129,6 +129,7 @@ public:
                                          Eigen::Affine3f::Identity(), _frame, 0.0, 0.0f, 0);
 
     rangeImageSph_->header.frame_id = msg->header.frame_id;
+    rangeImageSph_->header.stamp = msg->header.stamp;
 
     convert();
   }
@@ -187,7 +188,8 @@ public:
     }
 
     msg = cv_bridge::CvImage(std_msgs::Header(), encoding, _rangeImage).toImageMsg();
-    msg->header.frame_id = rangeImageSph_->header.frame_id;
+
+    pcl_conversions::fromPCL(rangeImageSph_->header, msg->header);
 
     pub_.publish(msg);
   }
