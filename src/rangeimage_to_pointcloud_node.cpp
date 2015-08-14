@@ -256,11 +256,18 @@ private:
     _ang_res_y = config.ang_res_y;
     _max_ang_w = config.max_ang_w;
     _max_ang_h = config.max_ang_h;
+    _min_range = config.min_range;
+    _max_range = config.max_range;
+    _laser_frame = config.laser_frame;
+
+    _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
     ROS_INFO_STREAM("ang_res_x " << _ang_res_x);
     ROS_INFO_STREAM("ang_res_y " << _ang_res_y);
     ROS_INFO_STREAM("max_ang_w " << _max_ang_w);
     ROS_INFO_STREAM("max_ang_h " << _max_ang_h);
+    ROS_INFO_STREAM("min_range " << _min_range);
+    ROS_INFO_STREAM("max_range " << _max_range);
 
     if (_laser_frame)
       ROS_INFO_STREAM("Frame type : " << "LASER");
