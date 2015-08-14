@@ -150,8 +150,15 @@ public:
 
     boost::mutex::scoped_lock lock(_mut);
 
-    _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
-    pcl_conversions::toPCL(msg->header, _pointcloud.header);
+    try
+    {
+      _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
+      pcl_conversions::toPCL(msg->header, _pointcloud.header);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+      ROS_WARN_STREAM(e.what());
+    }
   }
 
   void convert()
