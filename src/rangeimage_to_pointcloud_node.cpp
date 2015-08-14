@@ -138,6 +138,9 @@ public:
     if (!_init)
       init();
 
+    // What the point if nobody cares ?
+    if (pub_.getNumSubscribers() <= 0)
+      return;
 
     _pointcloud.clear();
 
