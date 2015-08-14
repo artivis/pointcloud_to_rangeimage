@@ -1,5 +1,4 @@
 #include <ros/ros.h>
-#include <ros/package.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_ros/point_cloud.h>
@@ -9,9 +8,7 @@
 #include <pointcloud_to_rangeimage/PointCloudToRangeImageReconfigureConfig.h>
 
 #include <pcl/point_types.h>
-#include <pcl/range_image/range_image.h>
 #include <pcl/range_image/range_image_spherical.h>
-#include <pcl/visualization/range_image_visualizer.h>
 
 #include <opencv2/core/core.hpp>
 
