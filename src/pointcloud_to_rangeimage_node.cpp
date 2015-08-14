@@ -27,8 +27,6 @@ namespace
   typedef pcl::RangeImage          RI;
   typedef pcl::RangeImageSpherical RIS;
 
-  typedef pcl::visualization::RangeImageVisualizer visualizer;
-
   typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig conf;
   typedef dynamic_reconfigure::Server<conf>               RangeImageReconfServer;
 }
@@ -56,8 +54,6 @@ private:
 
   boost::shared_ptr<RIS> rangeImageSph_;
 
-  boost::shared_ptr<visualizer> visualizer_;
-
   ros::NodeHandle nh_;
   ros::ServiceServer save_;
 
@@ -69,8 +65,6 @@ private:
 public:
 
   RangeImageConverter() :
-    _visualize(false),
-    _publish(true),
     _rgb_range_img(true),
     _laser_frame(true),
     _ang_res_x(0.1),
@@ -90,8 +84,6 @@ public:
 
     drsv_->setCallback(cb);
 
-    nh_.param("visualisation", _visualize, _visualize);
-    nh_.param("publish", _publish, _publish);
     nh_.param("rgb_range_img", _rgb_range_img, _rgb_range_img);
     nh_.param("laser_frame", _laser_frame, _laser_frame);
 
@@ -101,9 +93,6 @@ public:
     sub_ = nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
-
-    if (_visualize)
-      visualizer_ = boost::shared_ptr<visualizer>(new visualizer);
   }
 
   ~RangeImageConverter()
@@ -121,11 +110,7 @@ public:
 
     rangeImageSph_->header.frame_id = msg->header.frame_id;
 
-    if (_visualize)
-      visualizer_->showRangeImage(*rangeImageSph_);
-
-    if (_publish)
-      convert();
+    convert();
   }
 
   void convert()
