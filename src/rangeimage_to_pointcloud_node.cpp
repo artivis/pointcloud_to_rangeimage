@@ -35,8 +35,6 @@ class PointCloudConverter
 {
 private:
 
-  bool _visualize;
-  bool _publish;
   bool _laser_frame;
 
   pcl::RangeImage::CoordinateFrame _frame;
@@ -68,8 +66,6 @@ private:
 public:
 
   PointCloudConverter() :
-    _visualize(true),
-    _publish(true),
     _laser_frame(true),
     _ang_res_x(0.1),
     _ang_res_y(0.1),
@@ -164,8 +160,7 @@ public:
       }
     }
 
-    if (_publish)
-      pub_.publish(_pointcloud);
+    pub_.publish(_pointcloud);
   }
 
 private:
