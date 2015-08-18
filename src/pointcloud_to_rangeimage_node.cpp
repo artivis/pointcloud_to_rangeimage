@@ -268,7 +268,7 @@ int main(int argc, char** argv)
 
   RangeImageConverter converter;
 
-  ros::Rate rate(20);
+  ros::Rate rate(15);
 
   while (ros::ok())
   {
