@@ -122,6 +122,18 @@ public:
 
     std::string transport = "raw";
     nh_.param("transport", transport, transport);
+
+    if (transport != "raw" && transport != "compressedDepth")
+    {
+      ROS_WARN_STREAM("Transport " << transport
+                      << ".\nThe only transports supported are :\n\t - raw\n\t - compressedDepth.\n"
+                      << "Setting transport default 'raw'.");
+
+      transport = "raw";
+    }
+    else
+      ROS_INFO_STREAM("Transport " << transport);
+
     image_transport::TransportHints transportHint(transport);
 
     std::string image_in = "image_in";
