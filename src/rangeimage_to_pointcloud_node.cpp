@@ -212,7 +212,7 @@ public:
 
           ushort range_short;
 
-          getRangeFromFalseColor(r, g, b, range_short);
+          getRangeFromFalseColor2(r, g, b, range_short);
 
           if (range_short == 0.) continue;
 

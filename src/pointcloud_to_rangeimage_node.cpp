@@ -180,7 +180,7 @@ public:
 
     if (_rgb_range_img)
     {
-      encoding = "rgb8";
+      encoding = "bgr8";
       _rangeImage = cv::Mat::zeros(rows, cols, cv_bridge::getCvType(encoding));
 
       unsigned char r,g,b;
@@ -194,8 +194,7 @@ public:
 
           ushort range_short = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
 
-          getFalseColorFromRange(range_short, r, g, b);
-
+          getFalseColorFromRange2(range_short, r, g, b);
 
           _rangeImage.at<cv::Vec3b>(j, i)[0] = r;
           _rangeImage.at<cv::Vec3b>(j, i)[1] = g;
