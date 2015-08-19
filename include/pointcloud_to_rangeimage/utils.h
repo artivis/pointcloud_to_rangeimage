@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <cstring>
+#include <cmath>
 
 void getColorFromRange(float value, unsigned char& r, unsigned char& g, unsigned char& b)
 {
@@ -78,6 +79,24 @@ void getFalseColorFromRange(unsigned short value, unsigned char& r, unsigned cha
   b = 0;
 }
 
+void getFalseColorFromRange2(unsigned short value, unsigned char& r, unsigned char& g, unsigned char& b)
+{
+  float intpart, fractpart;
+  float maxuchar = static_cast<float>(std::numeric_limits<unsigned char>::max());
+
+  fractpart = std::modf(value/maxuchar, &intpart);
+
+  // keep integer part of division
+  r = intpart;
+
+  // deal with fractional part
+  fractpart = std::modf((fractpart*100.f)/maxuchar, &intpart);
+  g = intpart;
+
+  fractpart = std::modf((fractpart*100.f)/maxuchar, &intpart);
+  b = intpart;
+}
+
 void getRangeFromFalseColor(unsigned char r, unsigned char g, unsigned char b, unsigned short& value)
 {
   unsigned char data[sizeof(unsigned short)];
@@ -86,6 +105,18 @@ void getRangeFromFalseColor(unsigned char r, unsigned char g, unsigned char b, u
   data[1] = g;
 
   std::memcpy(&value, data, sizeof data);
+}
+
+void getRangeFromFalseColor2(unsigned char r, unsigned char g, unsigned char b, unsigned short& value)
+{
+  float maxuchar = static_cast<float>(std::numeric_limits<unsigned char>::max());
+
+  float sum = static_cast<float>(r)*maxuchar;
+
+  sum += static_cast<float>(g) / 100.f * maxuchar;
+  sum += static_cast<float>(b) / 100.f * maxuchar;
+
+  value = static_cast<unsigned short>(sum);
 }
 
 void getRangeFromColor(unsigned char r, unsigned char g, unsigned char b, float& value)
