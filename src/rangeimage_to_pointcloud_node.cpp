@@ -206,13 +206,30 @@ public:
       {
         for (int j=0; j<rows; ++j)
         {
-          //float range = _rangeImage->image.at<cv::Vec3b>(j,i)[0];
+          uchar r = _rangeImage->image.at<cv::Vec3b>(j, i)[0];
+          uchar g = _rangeImage->image.at<cv::Vec3b>(j, i)[1];
+          uchar b = _rangeImage->image.at<cv::Vec3b>(j, i)[2];
 
-          //rangeImageSph_->calculate3DPoint(i, j, range, pts);
+          ushort range_short;
 
-          //PointType p(pts[0], pts[1], pts[2]);
+          getRangeFromFalseColor(r, g, b, range_short);
 
-          //_pointcloud.push_back(p);
+          if (range_short == 0.) continue;
+
+          // Rescale range
+          float range = static_cast<float>(range_short) /
+              static_cast<float>(std::numeric_limits<ushort>::max());
+
+          range = (range - offset*factor) / factor;
+
+          pcl::PointWithRange& p = rangeImageSph_->getPointNoCheck(i, j);
+
+          p.range = range;
+
+          top    = std::min(top,    j);
+          right  = std::max(right,  i);
+          bottom = std::max(bottom, j);
+          left   = std::min(left,   i);
         }
       }
     }

@@ -2,6 +2,7 @@
 #define POINTCLOUD_TO_RANGEIMAGE_UTILS_H_
 
 #include <limits>
+#include <cstring>
 
 void getColorFromRange(float value, unsigned char& r, unsigned char& g, unsigned char& b)
 {
@@ -64,6 +65,27 @@ void getColorFromRange(float value, unsigned char& r, unsigned char& g, unsigned
     g = 255;
     b = static_cast<unsigned char> (static_cast<long int>(round((value-7.0)*255.0/3.0)));
   }
+}
+
+void getFalseColorFromRange(unsigned short value, unsigned char& r, unsigned char& g, unsigned char& b)
+{
+  unsigned char data[sizeof(unsigned short)];
+
+  std::memcpy(data, &value, sizeof value);
+
+  r = data[0];
+  g = data[1];
+  b = 0;
+}
+
+void getRangeFromFalseColor(unsigned char r, unsigned char g, unsigned char b, unsigned short& value)
+{
+  unsigned char data[sizeof(unsigned short)];
+
+  data[0] = r;
+  data[1] = g;
+
+  std::memcpy(&value, data, sizeof data);
 }
 
 void getRangeFromColor(unsigned char r, unsigned char g, unsigned char b, float& value)

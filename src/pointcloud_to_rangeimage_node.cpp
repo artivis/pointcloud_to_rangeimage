@@ -192,7 +192,10 @@ public:
 
           float range = std::max(0.0f, std::min(1.0f, factor * (p.range + offset)));
 
-          getColorFromRange(range, r, g, b);
+          ushort range_short = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
+
+          getFalseColorFromRange(range_short, r, g, b);
+
 
           _rangeImage.at<cv::Vec3b>(j, i)[0] = r;
           _rangeImage.at<cv::Vec3b>(j, i)[1] = g;
