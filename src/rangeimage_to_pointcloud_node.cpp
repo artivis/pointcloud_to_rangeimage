@@ -32,12 +32,15 @@ namespace
 
   typedef image_transport::ImageTransport It;
   typedef image_transport::Subscriber     Sub;
+
+  typedef pcl::visualization::RangeImageVisualizer Visu;
 }
 
 class PointCloudConverter
 {
 private:
 
+  bool _newmsg;
   bool _laser_frame;
   bool _init;
 
@@ -72,9 +75,12 @@ private:
 
   boost::shared_ptr<RangeImageReconfServer> drsv_;
 
+  boost::shared_ptr<Visu> visualizer_;
+
 public:
 
   PointCloudConverter() :
+    _newmsg(false),
     _laser_frame(true),
     _init(false),
     _ang_res_x(0.5),
@@ -166,6 +172,7 @@ public:
     {
       _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
       pcl_conversions::toPCL(msg->header, _pointcloud.header);
+      _newmsg = true;
     }
     catch (cv_bridge::Exception &e)
     {
@@ -180,6 +187,9 @@ public:
       return;
 
     if (_rangeImage == NULL)
+      return;
+
+    if (!_newmsg)
       return;
 
     if (!_init)
@@ -307,6 +317,8 @@ public:
     }
 
     pub_.publish(_pointcloud);
+
+    _newmsg = false;
 
     _mut.unlock();
   }
