@@ -76,7 +76,7 @@ public:
 
   RangeImageConverter() :
     _newmsg(false),
-    _rgb_range_img(true),
+    _rgb_range_img(false),
     _laser_frame(true),
     _ang_res_x(0.5),
     _ang_res_y(0.7),
