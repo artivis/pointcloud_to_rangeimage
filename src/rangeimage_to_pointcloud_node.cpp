@@ -294,11 +294,6 @@ public:
 
     rangeImageSph_->cropImage(0, top, right, bottom, left);
 
-    //ROS_INFO_STREAM("off_x_res " << off_x_res);
-    //ROS_INFO_STREAM("off_y_res " << off_y_res);
-    //ROS_INFO_STREAM("offset_x " << offset_x);
-    //ROS_INFO_STREAM("offset_y " << offset_y);
-
     rangeImageSph_->setImageOffsets(offset_x, offset_y);
 
     rangeImageSph_->recalculate3DPointPositions();
