@@ -264,6 +264,7 @@ public:
     else
     {
       ROS_ERROR("Unknown image encoding!");
+      _mut.unlock();
       return;
     }
 
