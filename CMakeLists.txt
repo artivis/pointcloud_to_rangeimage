@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   dynamic_reconfigure
   message_generation
+  message_runtime
   image_transport
   cmake_modules
 )
@@ -16,6 +17,17 @@ find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 
+add_message_files(
+  FILES
+  RangeImageHeader.msg
+  RangeImage.msg
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   sensor_msgs
+)
 
 generate_dynamic_reconfigure_options(
     cfg/RangeImage.cfg
