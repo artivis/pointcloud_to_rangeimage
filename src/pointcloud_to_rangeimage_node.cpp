@@ -165,12 +165,6 @@ public:
 
     sensor_msgs::ImagePtr msg;
 
-    // TODO : would be better to use
-    // those min/max rather than params
-    // but how to get them back properly on client side ?
-    //float min_range, max_range;
-    //rangeImageSph_->getMinMaxRanges(min_range, max_range);
-
     float factor = 1.0f / (_header.max_range - _header.min_range);
     float offset = -_header.min_range;
 
@@ -228,6 +222,10 @@ public:
     msg = cv_bridge::CvImage(std_msgs::Header(), encoding, _rangeImage).toImageMsg();
 
     pcl_conversions::fromPCL(_range_image_ptr->header, msg->header);
+
+    /** \todo : check if they actually change from _header. */
+    float min_range, max_range;
+    _range_image_ptr->getMinMaxRanges(min_range, max_range);
 
     RangeImageMsg range_image_msg;
 
