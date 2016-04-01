@@ -245,7 +245,7 @@ public:
 
 private:
 
-  void drcb(Conf &config, uint32_t level)
+  void drcb(Conf &config, uint32_t /*level*/)
   {
     _header.ang_res_x = config.ang_res_x;
     _header.ang_res_y = config.ang_res_y;
