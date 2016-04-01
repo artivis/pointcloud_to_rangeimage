@@ -26,7 +26,7 @@ namespace
   typedef pcl::PointCloud<PointType> PointCloud;
   typedef PointCloud::ConstPtr       PointCloudConstPtr;
 
-  typedef pcl::RangeImage               RangeImage;
+  typedef pcl::RangeImageSpherical      RangeImage;
   typedef boost::shared_ptr<RangeImage> RangeImagePtr;
 
   typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig Conf;
