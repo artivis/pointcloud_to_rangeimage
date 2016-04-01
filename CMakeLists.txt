@@ -69,7 +69,7 @@ target_link_libraries(pointcloud_to_rangeimage_node
 
 ## Declare a cpp executable
 add_executable(rangeimage_to_pointcloud_node src/rangeimage_to_pointcloud_node.cpp)
-add_dependencies(rangeimage_to_pointcloud_node ${PROJECT_NAME}_gencfg pointcloud_to_rangeimage_generate_messages_cpp)
+add_dependencies(rangeimage_to_pointcloud_node pointcloud_to_rangeimage_generate_messages_cpp)
 target_link_libraries(rangeimage_to_pointcloud_node
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}

@@ -5,9 +5,6 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <image_transport/image_transport.h>
 
-#include <dynamic_reconfigure/server.h>
-#include <pointcloud_to_rangeimage/PointCloudToRangeImageReconfigureConfig.h>
-
 #include <pcl/point_types.h>
 #include <pcl/range_image/range_image_spherical.h>
 
@@ -27,8 +24,6 @@ namespace
   typedef pcl::RangeImage          RI;
   typedef pcl::RangeImageSpherical RIS;
 
-  typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig conf;
-  typedef dynamic_reconfigure::Server<conf>               RangeImageReconfServer;
 
   typedef image_transport::ImageTransport It;
   typedef image_transport::Subscriber     Sub;
@@ -65,13 +60,11 @@ private:
 
   boost::shared_ptr<RIS> rangeImageSph_;
 
-  ros::NodeHandle nh_;
+  ros::NodeHandle _nh;
 
-  It              it_;
-  ros::Publisher  pub_;
-  Sub             sub_;
-
-  boost::shared_ptr<RangeImageReconfServer> drsv_;
+  It              _it;
+  ros::Publisher  _pub;
+  Sub             _sub;
 
 public:
 
@@ -85,19 +78,12 @@ public:
     _max_ang_h(360.),
     _min_range(0.5),
     _max_range(50),
-    nh_("~"),
-    it_(nh_)
+    _nh("~"),
+    _it(_nh)
   {
     rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
 
-    drsv_.reset(new RangeImageReconfServer(ros::NodeHandle("rangeimage_to_pointcloud_dynreconf")));
-
-    RangeImageReconfServer::CallbackType cb;
-    cb = boost::bind(&PointCloudConverter::drcb, this, _1, _2);
-
-    drsv_->setCallback(cb);
-
-    nh_.param("laser_frame", _laser_frame, _laser_frame);
+    _nh.param("laser_frame", _laser_frame, _laser_frame);
 
     double ang_res_x = static_cast<double>(_ang_res_x);
     double ang_res_y = static_cast<double>(_ang_res_y);
@@ -106,12 +92,12 @@ public:
     double min_range = static_cast<double>(_min_range);
     double max_range = static_cast<double>(_max_range);
 
-    nh_.param("ang_res_x", ang_res_x, ang_res_x);
-    nh_.param("ang_res_y", ang_res_y, ang_res_y);
-    nh_.param("max_ang_w", max_ang_w, max_ang_w);
-    nh_.param("max_ang_h", max_ang_h, max_ang_h);
-    nh_.param("min_range", min_range, min_range);
-    nh_.param("max_range", max_range, max_range);
+    _nh.param("ang_res_x", ang_res_x, ang_res_x);
+    _nh.param("ang_res_y", ang_res_y, ang_res_y);
+    _nh.param("max_ang_w", max_ang_w, max_ang_w);
+    _nh.param("max_ang_h", max_ang_h, max_ang_h);
+    _nh.param("min_range", min_range, min_range);
+    _nh.param("max_range", max_range, max_range);
 
     _ang_res_x = static_cast<float>(ang_res_x);
     _ang_res_y = static_cast<float>(ang_res_y);
@@ -120,10 +106,10 @@ public:
     _min_range = static_cast<float>(min_range);
     _max_range = static_cast<float>(max_range);
 
-    pub_ = nh_.advertise<sensor_msgs::PointCloud2>("pointcloud_out", 1);
+    _pub = _nh.advertise<sensor_msgs::PointCloud2>("pointcloud_out", 1);
 
     std::string transport = "raw";
-    nh_.param("transport", transport, transport);
+    _nh.param("transport", transport, transport);
 
     if (transport != "raw" && transport != "compressedDepth")
     {
@@ -139,8 +125,8 @@ public:
     image_transport::TransportHints transportHint(transport);
 
     std::string image_in = "image_in";
-    nh_.param("image_in", image_in, image_in);
-    sub_ = it_.subscribe(image_in, 1, &PointCloudConverter::callback, this, transportHint);
+    _nh.param("image_in", image_in, image_in);
+    _sub = _it.subscribe(image_in, 1, &PointCloudConverter::callback, this, transportHint);
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
   }
@@ -179,7 +165,7 @@ public:
   void convert()
   {
     // What the point if nobody cares ?
-    if (pub_.getNumSubscribers() <= 0)
+    if (_pub.getNumSubscribers() <= 0)
       return;
 
     if (_rangeImage == NULL)
@@ -278,13 +264,13 @@ public:
     int offset_y = rangeImageSph_->getImageOffsetY();
 
     std::string off_x_res, off_y_res;
-    if (nh_.searchParam("/pointcloud_to_rangeimage/range_image_offset_x", off_x_res))
-      nh_.param(off_x_res, offset_x, offset_x);
+    if (_nh.searchParam("/pointcloud_to_rangeimage/range_image_offset_x", off_x_res))
+      _nh.param(off_x_res, offset_x, offset_x);
     else
       ROS_WARN_ONCE("Couldn't find param 'range_image_offset_x'. Use Default value.");
 
-    if (nh_.searchParam("/pointcloud_to_rangeimage/range_image_offset_y", off_y_res))
-      nh_.param(off_y_res, offset_y, offset_y);
+    if (_nh.searchParam("/pointcloud_to_rangeimage/range_image_offset_y", off_y_res))
+      _nh.param(off_y_res, offset_y, offset_y);
     else
       ROS_WARN_ONCE("Couldn't find param 'range_image_offset_y'. Use Default value.");
 
@@ -307,40 +293,11 @@ public:
       _pointcloud.push_back(p);
     }
 
-    pub_.publish(_pointcloud);
+    _pub.publish(_pointcloud);
 
     _newmsg = false;
 
     _mut.unlock();
-  }
-
-private:
-
-  void drcb(conf &config, uint32_t level)
-  {
-    _ang_res_x = config.ang_res_x;
-    _ang_res_y = config.ang_res_y;
-    _max_ang_w = config.max_ang_w;
-    _max_ang_h = config.max_ang_h;
-    _min_range = config.min_range;
-    _max_range = config.max_range;
-    _laser_frame = config.laser_frame;
-
-    _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
-
-    ROS_INFO_STREAM("ang_res_x " << _ang_res_x);
-    ROS_INFO_STREAM("ang_res_y " << _ang_res_y);
-    ROS_INFO_STREAM("max_ang_w " << _max_ang_w);
-    ROS_INFO_STREAM("max_ang_h " << _max_ang_h);
-    ROS_INFO_STREAM("min_range " << _min_range);
-    ROS_INFO_STREAM("max_range " << _max_range);
-
-    if (_laser_frame)
-      ROS_INFO_STREAM("Frame type : " << "LASER");
-    else
-      ROS_INFO_STREAM("Frame type : " << "CAMERA");
-
-    _init = false;
   }
 };
 
