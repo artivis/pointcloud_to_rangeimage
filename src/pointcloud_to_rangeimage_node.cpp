@@ -260,13 +260,6 @@ private:
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
-   ROS_INFO_STREAM("ang_res_x " << _header.ang_res_x);
-   ROS_INFO_STREAM("ang_res_y " << _header.ang_res_y);
-   ROS_INFO_STREAM("max_ang_w " << _header.max_ang_w);
-   ROS_INFO_STREAM("max_ang_h " << _header.max_ang_h);
-   ROS_INFO_STREAM("min_range " << _header.min_range);
-   ROS_INFO_STREAM("max_range " << _header.max_range);
-
    ROS_INFO_STREAM("RangeImageHeader is now set as:\n " << _header);
 
    if (_laser_frame)
