@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   message_generation
   image_transport
+  cmake_modules
 )
 
 find_package(PCL REQUIRED)

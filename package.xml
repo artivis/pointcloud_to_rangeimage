@@ -2,11 +2,11 @@
 <package>
   <name>pointcloud_to_rangeimage</name>
   <version>0.0.0</version>
-  <description>turns a 360 point cloud to a range image</description>
+  <description>Convert point cloud to range image back and forth.</description>
 
   <maintainer email="jeremie.deray@pal-robotics.com">Jeremie Deray</maintainer>
 
-  <license>TODO</license>
+  <license>BSD</license>
 
   <!-- <url type="website">http://wiki.ros.org/range_image_spherical</url> -->
 
@@ -21,6 +21,7 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>image_transport</build_depend>
+  <build_depend>cmake_modules</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
@@ -29,6 +30,7 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>image_transport</run_depend>
+  <run_depend>cmake_modules</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

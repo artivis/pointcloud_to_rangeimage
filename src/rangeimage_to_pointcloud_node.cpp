@@ -32,8 +32,6 @@ namespace
 
   typedef image_transport::ImageTransport It;
   typedef image_transport::Subscriber     Sub;
-
-  typedef pcl::visualization::RangeImageVisualizer Visu;
 }
 
 class PointCloudConverter
@@ -74,8 +72,6 @@ private:
   Sub             sub_;
 
   boost::shared_ptr<RangeImageReconfServer> drsv_;
-
-  boost::shared_ptr<Visu> visualizer_;
 
 public:
 
