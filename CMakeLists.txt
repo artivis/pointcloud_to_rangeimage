@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   message_generation
   message_runtime
-  image_transport
   cmake_modules
 )
 

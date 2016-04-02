@@ -3,7 +3,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <image_transport/image_transport.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <pointcloud_to_rangeimage/PointCloudToRangeImageReconfigureConfig.h>
@@ -32,13 +31,13 @@ namespace
   typedef pointcloud_to_rangeimage::PointCloudToRangeImageReconfigureConfig Conf;
   typedef dynamic_reconfigure::Server<Conf>               RangeImageReconfServer;
 
-  typedef image_transport::ImageTransport It;
-  typedef image_transport::Publisher      Pub;
-
   typedef pointcloud_to_rangeimage::RangeImageHeader RangeImageHeader;
   typedef pointcloud_to_rangeimage::RangeImage       RangeImageMsg;
 
   const Eigen::Affine3f I = Eigen::Affine3f::Identity();
+
+  const ushort MAX_USHORT   = std::numeric_limits<ushort>::max();
+  const float  MAX_USHORT_F = static_cast<float>(MAX_USHORT);
 }
 
 class RangeImageConverter
@@ -63,8 +62,7 @@ private:
 
   ros::NodeHandle _nh;
 
-  It              _it;
-  Pub             _pub;
+  ros::Publisher  _pub;
   ros::Subscriber _sub;
 
   boost::shared_ptr<RangeImageReconfServer> _drsv;
@@ -76,8 +74,7 @@ public:
     _rgb_range_img(false),
     _laser_frame(true),
     _range_image_ptr(new RangeImage),
-    _nh("~"),
-    _it(_nh)
+    _nh("~")
   {
     _drsv.reset(new RangeImageReconfServer(ros::NodeHandle("pointcloud_to_rangeimage_dynreconf")));
 
@@ -119,10 +116,9 @@ public:
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
-    _pub = _it.advertise("image_out", 1);
+    _pub = _nh.advertise<RangeImageMsg>("image_out", 1);
 
-    ros::NodeHandle nh;
-    _sub = nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
+    _sub = _nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
   }
 
   ~RangeImageConverter()
@@ -144,7 +140,7 @@ public:
   void convert()
   {
     // What the point if nobody cares ?
-    if (_pub.getNumSubscribers() <= 0)
+    if (_pub.getNumSubscribers() == 0)
       return;
 
     if (!_newmsg)
@@ -184,7 +180,7 @@ public:
 
           float range = std::max(0.0f, std::min(1.0f, factor * (p.range + offset)));
 
-          ushort range_short = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
+          ushort range_short = static_cast<ushort>((range) * MAX_USHORT);
 
           getFalseColorFromRange2(range_short, r, g, b);
 
@@ -208,7 +204,7 @@ public:
                 std::max(0.0f, std::min(1.0f, factor * (r + offset))) :
                 0.0;
 
-          _rangeImage.at<ushort>(j, i) = static_cast<ushort>((range) * std::numeric_limits<ushort>::max());
+          _rangeImage.at<ushort>(j, i) = static_cast<ushort>((range) * MAX_USHORT);
         }
       }
     }

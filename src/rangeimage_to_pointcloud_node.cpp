@@ -3,7 +3,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <image_transport/image_transport.h>
 
 #include <pcl/point_types.h>
 #include <pcl/range_image/range_image_spherical.h>
@@ -14,19 +13,26 @@
 
 #include <boost/thread/mutex.hpp>
 
+#include "pointcloud_to_rangeimage/RangeImage.h"
 #include "pointcloud_to_rangeimage/utils.h"
 
 namespace
 {
   typedef pcl::PointXYZ              PointType;
   typedef pcl::PointCloud<PointType> PointCloud;
+  typedef PointCloud::ConstPtr       PointCloudConstPtr;
 
-  typedef pcl::RangeImage          RI;
-  typedef pcl::RangeImageSpherical RIS;
+  typedef pcl::RangeImageSpherical      RangeImage;
+  typedef boost::shared_ptr<RangeImage> RangeImagePtr;
 
+  typedef pointcloud_to_rangeimage::RangeImageHeader   RangeImageHeader;
+  typedef pointcloud_to_rangeimage::RangeImage         RangeImageMsg;
+  typedef pointcloud_to_rangeimage::RangeImageConstPtr RangeImageMsgConstPtr;
 
-  typedef image_transport::ImageTransport It;
-  typedef image_transport::Subscriber     Sub;
+  const Eigen::Affine3f I = Eigen::Affine3f::Identity();
+
+  const ushort MAX_USHORT   = std::numeric_limits<ushort>::max();
+  const float  MAX_USHORT_F = static_cast<float>(MAX_USHORT);
 }
 
 class PointCloudConverter
@@ -40,31 +46,19 @@ private:
   // RangeImage frame
   pcl::RangeImage::CoordinateFrame _frame;
 
-  // RangeImage resolution
-  float _ang_res_x;
-  float _ang_res_y;
-
-  // RangeImage angular FoV
-  float _max_ang_w;
-  float _max_ang_h;
-
-  // Sensor min/max range
-  float _min_range;
-  float _max_range;
-
   boost::mutex _mut;
 
-  cv_bridge::CvImagePtr _rangeImage;
+  RangeImageMsgConstPtr _range_image_msg_ptr;
+  cv_bridge::CvImagePtr _cv_image_ptr;
 
   PointCloud _pointcloud;
 
-  boost::shared_ptr<RIS> rangeImageSph_;
+  RangeImagePtr _range_image_ptr;
 
   ros::NodeHandle _nh;
 
-  It              _it;
   ros::Publisher  _pub;
-  Sub             _sub;
+  ros::Subscriber _sub;
 
 public:
 
@@ -72,61 +66,12 @@ public:
     _newmsg(false),
     _laser_frame(true),
     _init(false),
-    _ang_res_x(0.5),
-    _ang_res_y(0.7),
-    _max_ang_w(360.),
-    _max_ang_h(360.),
-    _min_range(0.5),
-    _max_range(50),
-    _nh("~"),
-    _it(_nh)
+    _range_image_ptr(new RangeImage),
+    _nh("~")
   {
-    rangeImageSph_ = boost::shared_ptr<RIS>(new RIS);
-
-    _nh.param("laser_frame", _laser_frame, _laser_frame);
-
-    double ang_res_x = static_cast<double>(_ang_res_x);
-    double ang_res_y = static_cast<double>(_ang_res_y);
-    double max_ang_w = static_cast<double>(_max_ang_w);
-    double max_ang_h = static_cast<double>(_max_ang_h);
-    double min_range = static_cast<double>(_min_range);
-    double max_range = static_cast<double>(_max_range);
-
-    _nh.param("ang_res_x", ang_res_x, ang_res_x);
-    _nh.param("ang_res_y", ang_res_y, ang_res_y);
-    _nh.param("max_ang_w", max_ang_w, max_ang_w);
-    _nh.param("max_ang_h", max_ang_h, max_ang_h);
-    _nh.param("min_range", min_range, min_range);
-    _nh.param("max_range", max_range, max_range);
-
-    _ang_res_x = static_cast<float>(ang_res_x);
-    _ang_res_y = static_cast<float>(ang_res_y);
-    _max_ang_w = static_cast<float>(max_ang_w);
-    _max_ang_h = static_cast<float>(max_ang_h);
-    _min_range = static_cast<float>(min_range);
-    _max_range = static_cast<float>(max_range);
-
     _pub = _nh.advertise<sensor_msgs::PointCloud2>("pointcloud_out", 1);
 
-    std::string transport = "raw";
-    _nh.param("transport", transport, transport);
-
-    if (transport != "raw" && transport != "compressedDepth")
-    {
-      ROS_WARN_STREAM("Transport " << transport
-                      << ".\nThe only transports supported are :\n\t - raw\n\t - compressedDepth.\n"
-                      << "Setting transport default 'raw'.");
-
-      transport = "raw";
-    }
-    else
-      ROS_INFO_STREAM("Transport " << transport);
-
-    image_transport::TransportHints transportHint(transport);
-
-    std::string image_in = "image_in";
-    _nh.param("image_in", image_in, image_in);
-    _sub = _it.subscribe(image_in, 1, &PointCloudConverter::callback, this, transportHint);
+    _sub = _nh.subscribe("image_in", 1, &PointCloudConverter::callback, this);
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
   }
@@ -136,85 +81,94 @@ public:
 
   }
 
-  void init()
+  void createRangeImage()
   {
-    rangeImageSph_->createEmpty(pcl::deg2rad(_ang_res_x), pcl::deg2rad(_ang_res_y),
-                                Eigen::Affine3f::Identity(), _frame,
-                                pcl::deg2rad(_max_ang_w), pcl::deg2rad(_max_ang_h));
-    _init = true;
+    _range_image_ptr->createEmpty(pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_x),
+                                  pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_y),
+                                  I, _frame,
+                                  pcl::deg2rad(_range_image_msg_ptr->Specifics.max_ang_w),
+                                  pcl::deg2rad(_range_image_msg_ptr->Specifics.max_ang_h));
+
+    _range_image_ptr->setImageOffsets(_range_image_msg_ptr->Specifics.offset_x,
+                                      _range_image_msg_ptr->Specifics.offset_y);
   }
 
-  void callback(const sensor_msgs::ImageConstPtr& msg)
+  void callback(const RangeImageMsgConstPtr& msg)
   {
     if (msg == NULL) return;
 
     boost::mutex::scoped_lock lock(_mut);
 
-    try
-    {
-      _rangeImage = cv_bridge::toCvCopy(msg, msg->encoding);
-      pcl_conversions::toPCL(msg->header, _pointcloud.header);
-      _newmsg = true;
-    }
-    catch (cv_bridge::Exception &e)
-    {
-      ROS_WARN_STREAM(e.what());
-    }
+    _range_image_msg_ptr = msg;
   }
 
   void convert()
   {
     // What the point if nobody cares ?
-    if (_pub.getNumSubscribers() <= 0)
+    if (_pub.getNumSubscribers() == 0)
       return;
 
-    if (_rangeImage == NULL)
+    if (_newmsg || _range_image_msg_ptr == NULL)
       return;
-
-    if (!_newmsg)
-      return;
-
-    if (!_init)
-      init();
 
     _pointcloud.clear();
 
-    float factor = 1.0f / (_max_range - _min_range);
-    float offset = -_min_range;
-
     _mut.lock();
 
-    int cols = _rangeImage->image.cols;
-    int rows = _rangeImage->image.rows;
+    createRangeImage();
+
+    float factor = 1.0f / (_range_image_msg_ptr->Specifics.max_range -
+                           _range_image_msg_ptr->Specifics.min_range);
+
+    float inv_factor = 1.0f / factor;
+
+    float offset = - _range_image_msg_ptr->Specifics.min_range;
+
+    float offset_factor = offset * factor;
+
+    try
+    {
+      _cv_image_ptr = cv_bridge::toCvCopy(_range_image_msg_ptr->Image,
+                                          _range_image_msg_ptr->Image.encoding);
+
+      pcl_conversions::toPCL(_range_image_msg_ptr->Image.header, _pointcloud.header);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+      ROS_WARN_STREAM(e.what());
+    }
+
+    // CvCopy, we can unlock
+    _mut.unlock();
+
+    int cols = _cv_image_ptr->image.cols;
+    int rows = _cv_image_ptr->image.rows;
 
     int top    = rows;
     int right  = -1;
     int bottom = -1;
     int left   = cols;
 
-    if (_rangeImage->encoding == "bgr8")
+    if (_cv_image_ptr->encoding == "bgr8")
     {
       for (int i=0; i<cols; ++i)
       {
         for (int j=0; j<rows; ++j)
         {
-          uchar r = _rangeImage->image.at<cv::Vec3b>(j, i)[0];
-          uchar g = _rangeImage->image.at<cv::Vec3b>(j, i)[1];
-          uchar b = _rangeImage->image.at<cv::Vec3b>(j, i)[2];
+          cv::Vec3b rgb = _cv_image_ptr->image.at<cv::Vec3b>(j, i);
 
           ushort range_short;
 
-          getRangeFromFalseColor2(r, g, b, range_short);
+          getRangeFromFalseColor2(rgb[0], rgb[0], rgb[0], range_short);
 
           if (range_short == 0.) continue;
 
           // Rescale range
-          float range = static_cast<float>(range_short) /
-              static_cast<float>(std::numeric_limits<ushort>::max());
+          float range = static_cast<float>(range_short) / MAX_USHORT_F;
 
-          range = (range - offset*factor) / factor;
+          range = (range - offset_factor) * inv_factor;
 
-          pcl::PointWithRange& p = rangeImageSph_->getPointNoCheck(i, j);
+          pcl::PointWithRange& p = _range_image_ptr->getPointNoCheck(i, j);
 
           p.range = range;
 
@@ -225,24 +179,23 @@ public:
         }
       }
     }
-    else if (_rangeImage->encoding == "mono16")
+    else if (_cv_image_ptr->encoding == "mono16")
     {
       for (int i=0; i<cols; ++i)
       {
         for (int j=0; j<rows; ++j)
         {
-          ushort range_img = _rangeImage->image.at<ushort>(j, i);
+          ushort range_img = _cv_image_ptr->image.at<ushort>(j, i);
 
           // Discard unobserved points
           if (range_img == 0.) continue;
 
           // Rescale range
-          float range = static_cast<float>(range_img) /
-                        static_cast<float>(std::numeric_limits<ushort>::max());
+          float range = static_cast<float>(range_img) / MAX_USHORT_F;
 
-          range = (range - offset*factor) / factor;
+          range = (range - offset_factor) * inv_factor;
 
-          pcl::PointWithRange& p = rangeImageSph_->getPointNoCheck(i, j);
+          pcl::PointWithRange& p = _range_image_ptr->getPointNoCheck(i, j);
 
           p.range = range;
 
@@ -255,38 +208,24 @@ public:
     }
     else
     {
-      ROS_ERROR("Unknown image encoding!");
-      _mut.unlock();
+      ROS_ERROR_THROTTLE(2, "Unknown image encoding!");
+      _newmsg = false;
       return;
     }
 
-    int offset_x = rangeImageSph_->getImageOffsetX();
-    int offset_y = rangeImageSph_->getImageOffsetY();
+    _range_image_ptr->cropImage(0, top, right, bottom, left);
 
-    std::string off_x_res, off_y_res;
-    if (_nh.searchParam("/pointcloud_to_rangeimage/range_image_offset_x", off_x_res))
-      _nh.param(off_x_res, offset_x, offset_x);
-    else
-      ROS_WARN_ONCE("Couldn't find param 'range_image_offset_x'. Use Default value.");
+    _range_image_ptr->recalculate3DPointPositions();
 
-    if (_nh.searchParam("/pointcloud_to_rangeimage/range_image_offset_y", off_y_res))
-      _nh.param(off_y_res, offset_y, offset_y);
-    else
-      ROS_WARN_ONCE("Couldn't find param 'range_image_offset_y'. Use Default value.");
+    unsigned int num_pts = _range_image_ptr->points.size();
 
-    rangeImageSph_->cropImage(0, top, right, bottom, left);
-
-    rangeImageSph_->setImageOffsets(offset_x, offset_y);
-
-    rangeImageSph_->recalculate3DPointPositions();
-
-    for (int i=0; i<rangeImageSph_->points.size(); ++i)
+    /** \todo there is probably a way to convert in pcl */
+    for (int i=0; i<num_pts; ++i)
     {
-      pcl::PointWithRange& pts = rangeImageSph_->points[i];
+      pcl::PointWithRange& pts = _range_image_ptr->points[i];
 
       // Discard unobserved points
-      if (std::isinf(pts.range))
-        continue;
+      if (std::isinf(pts.range)) continue;
 
       PointType p(pts.x, pts.y, pts.z);
 
@@ -296,8 +235,6 @@ public:
     _pub.publish(_pointcloud);
 
     _newmsg = false;
-
-    _mut.unlock();
   }
 };
 
