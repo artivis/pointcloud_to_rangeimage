@@ -176,7 +176,7 @@ public:
       for (int i=0; i<cols; ++i)
         for (int j=0; j<rows; ++j)
         {
-          pcl::PointWithRange p = _range_image_ptr->getPoint(i, j);
+          pcl::PointWithRange p = _range_image_ptr->getPointNoCheck(i, j);
 
           float range = std::max(0.0f, std::min(1.0f, factor * (p.range + offset)));
 
@@ -198,7 +198,7 @@ public:
       {
         for (int j=0; j<rows; ++j)
         {
-          float r = _range_image_ptr->getPoint(i, j).range;
+          float r = _range_image_ptr->getPointNoCheck(i, j).range;
 
           float range = (!std::isinf(r))?
                 std::max(0.0f, std::min(1.0f, factor * (r + offset))) :
