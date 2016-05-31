@@ -40,11 +40,7 @@ class PointCloudConverter
 private:
 
   bool _newmsg;
-  bool _laser_frame;
   bool _init;
-
-  // RangeImage frame
-  pcl::RangeImage::CoordinateFrame _frame;
 
   boost::mutex _mut;
 
@@ -60,11 +56,15 @@ private:
   ros::Publisher  _pub;
   ros::Subscriber _sub;
 
+  inline pcl::RangeImage::CoordinateFrame boolToFrame(bool is_laser)
+  {
+    return (is_laser)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
+  }
+
 public:
 
   PointCloudConverter() :
     _newmsg(false),
-    _laser_frame(true),
     _init(false),
     _range_image_ptr(new RangeImage),
     _nh("~")
@@ -72,8 +72,6 @@ public:
     _pub = _nh.advertise<sensor_msgs::PointCloud2>("pointcloud_out", 1);
 
     _sub = _nh.subscribe("image_in", 1, &PointCloudConverter::callback, this);
-
-    _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
   }
 
   ~PointCloudConverter()
@@ -85,7 +83,7 @@ public:
   {
     _range_image_ptr->createEmpty(pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_x),
                                   pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_y),
-                                  I, _frame,
+                                  I, boolToFrame(_range_image_msg_ptr->Specifics.laser_frame),
                                   pcl::deg2rad(_range_image_msg_ptr->Specifics.max_ang_w),
                                   pcl::deg2rad(_range_image_msg_ptr->Specifics.max_ang_h));
 
