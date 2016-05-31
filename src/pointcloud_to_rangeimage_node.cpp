@@ -45,6 +45,7 @@ class RangeImageConverter
 private:
 
   bool _newmsg;
+  bool _pub_img;
   bool _rgb_range_img;
   bool _laser_frame;
 
@@ -63,6 +64,7 @@ private:
   ros::NodeHandle _nh;
 
   ros::Publisher  _pub;
+  ros::Publisher  _img_pub;
   ros::Subscriber _sub;
 
   boost::shared_ptr<RangeImageReconfServer> _drsv;
@@ -71,6 +73,7 @@ public:
 
   RangeImageConverter() :
     _newmsg(false),
+    _pub_img(false),
     _rgb_range_img(false),
     _laser_frame(true),
     _range_image_ptr(new RangeImage),
@@ -116,7 +119,9 @@ public:
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
-    _pub = _nh.advertise<RangeImageMsg>("image_out", 1);
+    _pub = _nh.advertise<RangeImageMsg>("range_image_out", 1);
+
+    _img_pub = _nh.advertise<sensor_msgs::Image>("image_out", 1);
 
     _sub = _nh.subscribe<PointCloud>("point_cloud_in", 1, &RangeImageConverter::callback, this);
   }
@@ -139,11 +144,11 @@ public:
 
   void convert()
   {
-    // What the point if nobody cares ?
-    if (_pub.getNumSubscribers() == 0)
+    if (!_newmsg)
       return;
 
-    if (!_newmsg)
+    // What the point if nobody cares ?
+    if (_pub.getNumSubscribers() == 0 and _img_pub.getNumSubscribers() == 0)
       return;
 
     boost::mutex::scoped_lock(_mut);
@@ -231,10 +236,11 @@ public:
 
     range_image_msg.Image = *msg;
 
-    _pub.publish(msg);
+    if (_pub.getNumSubscribers() > 0)
+      _pub.publish(range_image_msg);
 
-    // I need an image_transport_plugin to do that, crap!
-    //_pub.publish(range_image_msg);
+    if (_pub_img and _img_pub.getNumSubscribers() > 0)
+      _img_pub.publish(*msg);
 
     _newmsg = false;
   }
