@@ -162,7 +162,7 @@ public:
     _range_image_ptr->createFromPointCloud(*_pointcloud_ptr,
                                          pcl::deg2rad(_header.ang_res_x), pcl::deg2rad(_header.ang_res_y),
                                          pcl::deg2rad(_header.max_ang_w), pcl::deg2rad(_header.max_ang_h),
-                                         I, _frame, 0.0, 0.0f, 0);
+                                         I, _frame, 0, 0, 0);
 
     _range_image_ptr->header.frame_id = _pointcloud_ptr->header.frame_id;
     _range_image_ptr->header.stamp    = _pointcloud_ptr->header.stamp;
@@ -265,12 +265,7 @@ private:
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
-   ROS_INFO_STREAM("RangeImageHeader is now set as:\n " << _header);
-
-   if (_laser_frame)
-     ROS_INFO_STREAM("Frame type : " << "LASER");
-   else
-     ROS_INFO_STREAM("Frame type : " << "CAMERA");
+   ROS_INFO_STREAM("RangeImageHeader is now set as:\n" << _header);
   }
 };
 
