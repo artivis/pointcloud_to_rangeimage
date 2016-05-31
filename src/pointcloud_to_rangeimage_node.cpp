@@ -90,6 +90,8 @@ public:
            max_ang_w, max_ang_h,
            min_range, max_range;
 
+    ros::Rate rate(2);
+
     bool got_all_param = false;
     do
     {
@@ -102,7 +104,11 @@ public:
                       _nh.getParam("rgb_range_img", _rgb_range_img) &&
                       _nh.getParam("laser_frame", _laser_frame);
 
+      _nh.getParam("publish_image", _pub_img);
+
       ROS_INFO_THROTTLE(1, "Waiting for Range Image parameters to be uploaded to the param server.");
+
+      rate.sleep();
 
     } while (!got_all_param && ros::ok());
 
