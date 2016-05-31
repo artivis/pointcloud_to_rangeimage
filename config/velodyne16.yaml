@@ -1,9 +1,37 @@
+## Velodyne model
 sensor        : velodyne16
-ang_res_x     : 0.5
-ang_res_y     : 0.7
+
+## Velodyne FoV
+# horizontal/azimuth
 max_ang_w     : 360
-max_ang_h     : 360
+# vertical/altitude
+max_ang_h     : 30
+
+## Velodyne angular resolution
+
+# The following aren't for a pretty image
+# but accurate reconstructed pcl
+
+# horizontal/azimuth resolution
+#ang_res_x     : 0.1
+# vertical/altitude resolution
+#ang_res_y     : 2
+
+# The following are for pretty image
+# but inaccurate pcl
+
+# horizontal/azimuth resolution
+ang_res_x     : 0.5
+# vertical/altitude resolution
+ang_res_y     : 0.7
+
+## Velodyne min/max range
 min_range     : 0.5
-max_range     : 50
+max_range     : 70
+
+# pointcloud frame type
+# see pcl RangeImage
 laser_frame   : True
+
+# publish an rgb image
 rgb_range_img : False
