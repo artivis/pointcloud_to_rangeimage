@@ -1,0 +1,11 @@
+<launch>
+
+  <arg name="image_in"         default="/pointcloud_to_rangeimage/range_image_out"/>
+  <arg name="point_cloud_out"  default="velodyne_points"/>
+
+  <node pkg="pointcloud_to_rangeimage" type="rangeimage_to_pointcloud_node" name="rangeimage_to_pointcloud" output="screen">
+     <remap from="~image_in"        to="$(arg image_in)"        />
+     <remap from="~point_cloud_out" to="$(arg point_cloud_out)"   />
+  </node>
+
+</launch>
