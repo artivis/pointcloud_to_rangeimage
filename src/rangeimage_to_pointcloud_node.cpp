@@ -47,8 +47,6 @@ private:
   RangeImageMsgConstPtr _range_image_msg_ptr;
   cv_bridge::CvImagePtr _cv_image_ptr;
 
-  PointCloud _pointcloud;
-
   RangeImagePtr _range_image_ptr;
 
   ros::NodeHandle _nh;
@@ -79,7 +77,7 @@ public:
 
   }
 
-  void createRangeImage()
+  void initializeRangeImage()
   {
     _range_image_ptr->createEmpty(pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_x),
                                   pcl::deg2rad(_range_image_msg_ptr->Specifics.ang_res_y),
@@ -109,11 +107,11 @@ public:
     if (_newmsg || _range_image_msg_ptr == NULL)
       return;
 
-    _pointcloud.clear();
+    PointCloud pointcloud;
 
     _mut.lock();
 
-    createRangeImage();
+    initializeRangeImage();
 
     float factor = 1.0f / (_range_image_msg_ptr->Specifics.max_range -
                            _range_image_msg_ptr->Specifics.min_range);
@@ -129,7 +127,7 @@ public:
       _cv_image_ptr = cv_bridge::toCvCopy(_range_image_msg_ptr->Image,
                                           _range_image_msg_ptr->Image.encoding);
 
-      pcl_conversions::toPCL(_range_image_msg_ptr->Image.header, _pointcloud.header);
+      pcl_conversions::toPCL(_range_image_msg_ptr->Image.header, pointcloud.header);
     }
     catch (cv_bridge::Exception &e)
     {
@@ -227,10 +225,10 @@ public:
 
       PointType p(pts.x, pts.y, pts.z);
 
-      _pointcloud.push_back(p);
+      pointcloud.push_back(p);
     }
 
-    _pub.publish(_pointcloud);
+    _pub.publish(pointcloud);
 
     _newmsg = false;
   }
