@@ -234,11 +234,8 @@ public:
 
     range_image_msg.Specifics = _header;
 
-    range_image_msg.Specifics.min_range = min_range;
-    range_image_msg.Specifics.max_range = max_range;
-
-    range_image_msg.Specifics.ang_res_x = _range_image_ptr->getImageOffsetX();
-    range_image_msg.Specifics.ang_res_x = _range_image_ptr->getImageOffsetY();
+    range_image_msg.Specifics.offset_x = _range_image_ptr->getImageOffsetX();
+    range_image_msg.Specifics.offset_y = _range_image_ptr->getImageOffsetY();
 
     range_image_msg.Image = *msg;
 
