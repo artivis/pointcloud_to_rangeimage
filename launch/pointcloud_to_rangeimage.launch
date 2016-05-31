@@ -1,0 +1,18 @@
+<launch>
+
+  <arg name="sensor" default="velodyne16"/>
+
+  <rosparam file="$(find pointcloud_to_rangeimage)/config/$(arg sensor).yaml" command="load" ns="pointcloud_to_rangeimage"/>
+
+  <arg name="publish_image" default="True"/>
+
+  <arg name="point_cloud_in"  default="/velodyne_points"/>
+  <arg name="image_out" default="/image_out"/>
+
+  <node pkg="pointcloud_to_rangeimage" type="pointcloud_to_rangeimage_node" name="pointcloud_to_rangeimage" output="screen">
+     <remap from="~point_cloud_in" to="$(arg point_cloud_in)"   />
+     <remap from="image_out"       to="$(arg image_out)"        />
+     <param name="publish_image"   value="$(arg publish_image)" />
+  </node>
+
+</launch>

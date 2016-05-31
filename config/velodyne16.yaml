@@ -1,0 +1,9 @@
+sensor        : velodyne16
+ang_res_x     : 0.5
+ang_res_y     : 0.7
+max_ang_w     : 360
+max_ang_h     : 360
+min_range     : 0.5
+max_range     : 50
+laser_frame   : True
+rgb_range_img : False
