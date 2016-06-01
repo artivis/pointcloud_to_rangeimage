@@ -157,15 +157,38 @@ public:
     if (_pub.getNumSubscribers() == 0 and _img_pub.getNumSubscribers() == 0)
       return;
 
-    boost::mutex::scoped_lock(_mut);
+    PointCloud tmp;
 
-    _range_image_ptr->createFromPointCloud(*_pointcloud_ptr,
-                                         pcl::deg2rad(_header.ang_res_x), pcl::deg2rad(_header.ang_res_y),
-                                         pcl::deg2rad(_header.max_ang_w), pcl::deg2rad(_header.max_ang_h),
-                                         I, _frame, 0, 0, 0);
+    {
+      boost::mutex::scoped_lock(_mut);
+      tmp = *_pointcloud_ptr;
+    }
 
-    _range_image_ptr->header.frame_id = _pointcloud_ptr->header.frame_id;
-    _range_image_ptr->header.stamp    = _pointcloud_ptr->header.stamp;
+    // RangeImage can't handle points that
+    // have a norm = 0 -> SegFault ><
+    std::set<unsigned int, Comparator> indices_rm;
+    unsigned int i = 0;
+    for (const PointType& p : tmp.points)
+    {
+      if (p.getVector3fMap().norm() == 0)
+        indices_rm.insert(i);
+
+      ++i;
+    }
+
+    for (auto ind : indices_rm)
+    {
+      PointCloud::iterator it = tmp.begin();
+      tmp.erase(it+ind);
+    }
+
+    _range_image_ptr->createFromPointCloud(tmp,
+                                           pcl::deg2rad(_header.ang_res_x), pcl::deg2rad(_header.ang_res_y),
+                                           pcl::deg2rad(_header.max_ang_w), pcl::deg2rad(_header.max_ang_h),
+                                           I, _frame, 0, 0, 0);
+
+    _range_image_ptr->header.frame_id = tmp.header.frame_id;
+    _range_image_ptr->header.stamp    = tmp.header.stamp;
 
     int cols = _range_image_ptr->width;
     int rows = _range_image_ptr->height;
@@ -268,6 +291,14 @@ private:
 
    ROS_INFO_STREAM("RangeImageHeader is now set as:\n" << _header);
   }
+
+  struct Comparator
+  {
+    bool operator() (unsigned int i1, unsigned int i2) const
+    {
+      return i1>i2;
+    }
+  };
 };
 
 int main(int argc, char** argv)
