@@ -101,12 +101,12 @@ public:
                       _nh.getParam("max_ang_h", max_ang_h) &&
                       _nh.getParam("min_range", min_range) &&
                       _nh.getParam("max_range", max_range) &&
-                      _nh.getParam("rgb_range_img", _rgb_range_img) &&
                       _nh.getParam("laser_frame", _laser_frame);
 
       _nh.getParam("publish_image", _pub_img);
+      _nh.getParam("rgb_range_img", _rgb_range_img);
 
-      ROS_INFO_THROTTLE(1, "Waiting for Range Image parameters to be uploaded to the param server.");
+      ROS_INFO_THROTTLE(1, "Retrieving Range Image parameters for the param server.");
 
       rate.sleep();
 
@@ -224,9 +224,8 @@ public:
 
     pcl_conversions::fromPCL(_range_image_ptr->header, msg->header);
 
-    /** \todo : check if they actually change from _header. */
-    float min_range, max_range;
-    _range_image_ptr->getMinMaxRanges(min_range, max_range);
+    //float min_range, max_range;
+    //_range_image_ptr->getMinMaxRanges(min_range, max_range);
 
     RangeImageMsg range_image_msg;
 
@@ -262,6 +261,8 @@ private:
     _header.max_range = config.max_range;
 
     _header.laser_frame = config.laser_frame;
+
+    _rgb_range_img = config.rgb_image;
 
     _frame = (_laser_frame)? pcl::RangeImage::LASER_FRAME : pcl::RangeImage::CAMERA_FRAME;
 
